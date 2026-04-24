@@ -56,140 +56,59 @@ class Stitcher:
     download filename
     """
     def _cacheURL(self, url):
-        if not os.path.exists(os.path.basename(url)):
-            _logger.info("Downloading PDF from remote URL %s", url)
-            with urllib.request.urlopen(url) as response, open(os.path.basename(url), 'wb') as downloadedFile:
-                shutil.copyfileobj(response, downloadedFile)
-        else:
-            _logger.info("Locally cached PDF found at %s", os.path.basename(url))
-        return os.path.basename(url)
+        pass
 
     """
     Get the number of pages in a PDF file
     """
     def _get_pdf_number_of_pages(self, filename):
-        assert os.path.isfile(filename) and os.access(filename, os.R_OK), \
-                "File {} doesn't exist or isn't readable".format(filename)
-        pdf_reader = PdfReader(open(filename, "rb"))
-        return pdf_reader.get_num_pages()
+        pass
 
     """
     Return an attribute with a default value of None
     """
     def _getAttribute(self, key, default=None):
-        return self.attributes.get(key, [default])[0]
+        pass
 
     def _getMetadata(self):
-        meta = {'/Producer': "pystitcher/%s" % __version__, '/Creator': "pystitcher/%s" % __version__}
-        if (self._getAttribute('author')):
-            meta["/Author"] = self._getAttribute('author')
-        if (self._getAttribute('title')):
-            meta["/Title"] = self._getAttribute('title')
-        elif self.title:
-            meta["/Title"] = self.title
-        if (self._getAttribute('subject')):
-            meta["/Subject"] = self._getAttribute('subject')
-        if (self._getAttribute('keywords')):
-            meta["/Keywords"] = self._getAttribute('keywords')
-
-        return meta
+        pass
 
     """
     Iterate through the elements in the spine HTML
     and generate self.bookmarks + self.files
     """
     def iter(self, element):
-        tag = element.tag
-        b = None
-        if(tag=='h1'):
-            if (self.title == None):
-                self.title = element.text
-            fit = element.attrib.get('fit', self.defaultFit)
-            b = Bookmark(self.currentPage, element.text, 1, fit)
-            self.currentLevel = 1
-        elif(tag=='h2'):
-            fit = element.attrib.get('fit', self.defaultFit)
-            b = Bookmark(self.currentPage, element.text, 2, fit)
-            self.currentLevel = 2
-        elif(tag =='h3'):
-            fit = element.attrib.get('fit', self.defaultFit)
-            b = Bookmark(self.currentPage, element.text, 3, fit)
-            self.currentLevel = 3
-        elif(tag =='a'):
-            file = element.attrib.get('href')
-            if(validators.url(file)):
-                file = self._cacheURL(file)
-            fit = element.attrib.get('fit', self.defaultFit)
-            rotate = int(element.attrib.get('rotate', self.defaultRotate))
-            start = int(element.attrib.get('start', self.defaultStart))
-            end = int(element.attrib.get('end', self._get_pdf_number_of_pages(file)
-                                         if self.defaultEnd is None else self.defaultEnd))
-            filters = (rotate, start, end)
-            b = Bookmark(self.currentPage, element.text, self.currentLevel+1, fit)
-            self.files.append((file, self.currentPage, filters))
-            self.currentPage += (end - start) + 1
-        if b:
-            self.bookmarks.append(b)
+        pass
 
     def _existingBookmarkConfig(self):
-        EXISTING_BOOKMARKS_DEFAULT = 'remove'
-        return self._getAttribute('existing_bookmarks', EXISTING_BOOKMARKS_DEFAULT)
+        pass
 
     def _removeExistingBookmarks(self):
-        return (self._existingBookmarkConfig() == 'remove')
+        pass
 
     def _flattenBookmarks(self):
-        return (self._existingBookmarkConfig() == 'flatten')
+        pass
 
     """
     Adds the existing bookmarks into the
     self.bookmarks list
     """
     def _add_existing_bookmarks(self):
-        self.bookmarks.sort()
-
-        bookmarks = self.bookmarks.copy()
-
-        if (self._removeExistingBookmarks() != True):
-            for b in self.oldBookmarks:
-                outer_level = self._get_level_from_page_number(b.page+1)
-                if (self._flattenBookmarks()):
-                    increment = 2
-                else:
-                    increment = b.level
-                level = outer_level + increment - 1
-                bookmarks.append(Bookmark(b.page+1, b.title, level, b.fit))
-
-        bookmarks.sort()
-        self.bookmarks = bookmarks
+        pass
 
     """
     Gets the last bookmark level at a given page number
     on the combined PDF
     """
     def _get_level_from_page_number(self, page):
-        previousBookmarkLevel = self.bookmarks[0].level
-        for b in self.bookmarks:
-            # _logger.info("testing: %s (P%s) [L%s]", b.title, b.page, b.level)
-            if (b.page > page):
-                # _logger.info("Returning L%s", previousBookmarkLevel)
-                return previousBookmarkLevel
-            previousBookmarkLevel = b.level
-        return previousBookmarkLevel
+        pass
 
     """
     Recursive method to read the old bookmarks (which are nested)
     and push them to self.oldBookmarks
     """
     def _iterate_old_bookmarks(self, pdf, startPage, bookmarks, level = 1):
-        if (isinstance(bookmarks, list)):
-            for inner_bookmark in bookmarks:
-                self._iterate_old_bookmarks(pdf, startPage, inner_bookmark, level+1)
-        else:
-            localPageNumber = pdf.get_destination_page_number(bookmarks)
-            globalPageNumber = startPage + localPageNumber - 1
-            b = Bookmark(globalPageNumber, bookmarks.title, level, self.defaultFit)
-            self.oldBookmarks.append(b)
+        pass
 
     """
     Insert the bookmarks into the PDF file
@@ -197,22 +116,7 @@ class Stitcher:
     # TODO: Interleave this into the merge method somehow
     """
     def _insert_bookmarks(self, old_filename, outputFilename):
-        stack = []
-        pdfInput = PdfReader(open(old_filename, 'rb'))
-        pdfOutput = PdfWriter()
-        pdfOutput.clone_document_from_reader(pdfInput)
-        for b in self.bookmarks:
-            existingRef = None
-            # Trim the stack till the top is useful (stack.level < b.level)
-            while len(stack) > 0 and stack[len(stack)-1][0].level >= b.level:
-                stack.pop()
-            # If stack has something, use it
-            if (len(stack) > 0):
-                existingRef = stack[len(stack) - 1][1]
-            bookmargArgs = [b.title, b.page-1, existingRef, None, False, False, Fit(b.fit)] + b.cords
-            stack.append((b, pdfOutput.add_outline_item(*bookmargArgs)))
-        pdfOutput.add_metadata(self._getMetadata())
-        pdfOutput.write(open(outputFilename, 'wb'))
+        pass
 
     """
     Merge the PDF files together in order
@@ -220,33 +124,10 @@ class Stitcher:
     as we're reading them
     """
     def _merge(self, output):
-        writer = PdfWriter()
-        for (inputFile,startPage,filters) in self.files:
-            assert os.path.isfile(inputFile), ERROR_PATH.format(inputFile)
-            reader = PdfReader(open(inputFile, 'rb'))
-            # Recursively iterate through the old bookmarks
-            self._iterate_old_bookmarks(reader, startPage, reader.outline)
-            rotate, start, end = filters
-            for page in range(start, end + 1):
-                writer.add_page(reader.get_page(page - 1).rotate(rotate))
-
-        writer.write(output)
-        output.close()
+        pass
 
     """
     Main entrypoint to generate the final PDF
     """
     def generate(self, outputFilename, cleanup = False):
-        tempPdf = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-        self._merge(tempPdf)
-        # Only read the additional bookmarks if we're not removing them
-        if (not self._removeExistingBookmarks()):
-            self._add_existing_bookmarks()
-        self._insert_bookmarks(tempPdf.name, outputFilename)
-
-        if (cleanup):
-            _logger.info("Deleting temporary files")
-            os.remove(tempPdf.name)
-        else:
-            # Why print? Because this is not logging, this is output
-            print("Temporary PDF file saved as ", tempPdf.name)
+        pass

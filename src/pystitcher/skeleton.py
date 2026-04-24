@@ -34,32 +34,7 @@ def parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(description="Stitch PDF files together")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="pystitcher {ver}".format(ver=__version__),
-    )
-    parser.add_argument(dest="input", help="Input markdown file", type=argparse.FileType('r', encoding='UTF-8'), metavar="spine.md")
-    parser.add_argument(dest="output", help="Output PDF file", type=str, metavar="output.pdf")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="log more things",
-        action="store_const",
-        const=logging.INFO,
-    )
-
-    parser.add_argument(
-        '--no-cleanup',
-        action='store_false',
-        default=True,
-        dest='cleanup',
-        help="Delete temporary files"
-    )
-
-    return parser.parse_args(args)
+    pass
 
 
 def setup_logging(loglevel):
@@ -68,24 +43,18 @@ def setup_logging(loglevel):
     Args:
       loglevel (int): minimum loglevel for emitting messages
     """
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(
-        level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    pass
 
 
 def main(args):
     """Main CLI function
     """
-    args = parse_args(args)
-    setup_logging(args.loglevel)
-    stitcher = Stitcher(args.input)
-    stitcher.generate(args.output, args.cleanup)
+    pass
 
 def run():
     """Calls :func:`main` passing the CLI arguments extracted from :obj:`sys.argv`
     """
-    main(sys.argv[1:])
+    pass
 
 
 if __name__ == "__main__":
